@@ -1,12 +1,20 @@
 import java.util.Scanner;
+import java.net.Socket;
 class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
+        try {
+            Socket socketConnection = new Socket("local", 3000);
+            socketConnection.getInputStream();
+        } catch (Exception e) {
+            System.err.println(e);
+        }
         int score = 0;
         System.out.println("Welcome to Hand Cricket");
         System.out.println("You will be the batsman");
         while (true) {
             System.out.println("Current score is " + score);
+            
             System.out.print("Enter your Choice: ");
             int userChoice = sc.nextInt();
             if (userChoice > 6 || userChoice < 0) {
@@ -27,6 +35,7 @@ class Main {
             } else {
                 score += userChoice;
             }
+
         }
         sc.close();
         System.out.println("Your total score is " + score);
