@@ -1,54 +1,43 @@
 import java.util.Scanner;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-class Main {
+
+public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        try {   
-            Socket socketConnection = new Socket("127.0.0.1",3000);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socketConnection.getInputStream()));
-            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-            PrintWriter out = new PrintWriter(socketConnection.getOutputStream(),true);
-            String userInput;
-            while ((userInput = stdIn.readLine()) != null) {
-                out.println(userInput);
-                System.out.println("echo: " + in.readLine());
-            }
+        System.out.println("-------------Welcome to Hand Cricket------------- \n\n");
+        System.out.println("Choose anyone option below");
+        System.out.println("0: Single Player");
+        System.out.println("1: Multi-Player");
+        System.out.println("2: Instructions");
+        int n = sc.nextInt();
 
-        } catch (Exception e) {
-            System.err.println(e);
+        switch (n) {
+            case 0:
+                // Need to implement with a inbuilt function;
+                break;
+            case 1:
+                // against two players in different terminals
+                break;
+            case 2:
+                // show instructions
+                break;
+            default:
+                System.out.println("Enter a valid choice");
+                break;
         }
-        // int score = 0;
-        // System.out.println("Welcome to Hand Cricket");
-        // System.out.println("You will be the batsman");
-        // while (true) {
-        //     System.out.println("Current score is " + score);
-            
-        //     System.out.print("Enter your Choice: ");
-        //     int userChoice = sc.nextInt();
-        //     if (userChoice > 6 || userChoice < 0) {
-        //         while (userChoice > 6 || userChoice < 0) {
-        //             System.out.println("You can only score between 1 - 6");
-        //             userChoice = sc.nextInt();
-        //         }
-        //     }
-        //     int randomNumber = (int) (Math.floor(Math.random() * 6));
-        //     if(randomNumber==0){
-        //         while (randomNumber==0) {
-        //             randomNumber = (int) (Math.floor(Math.random() * 6));
-        //         }
-        //     }
-        //     if (userChoice == randomNumber) {
-        //         System.out.println("\n Out!");
-        //         break;
-        //     } else {
-        //         score += userChoice;
-        //     }
-
-        // }
-        // sc.close();
-        // System.out.println("Your total score is " + score);
+    }
+    
+    public int throwToss(boolean isEven, int score, int choice) {
+        if (choice == 0) {
+            int computerNumber = (int) Math.floor(Math.random() * 6);
+            // need to check once
+            if ((computerNumber + score)%2 ==0 && isEven) {
+                return 1;
+            } else {
+                return 0;
+            }
+        } else {
+            // need to implement to get both values from two different playerss
+            return 0;
+        }
     }
 }
