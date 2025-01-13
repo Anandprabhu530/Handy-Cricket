@@ -6,11 +6,12 @@ public class Main {
         System.out.println("-------------Welcome to Hand Cricket------------- \n\n");
         System.out.println("Choose anyone option below");
         System.out.println("0: Single Player \n 1: Multi-Player \n 2: Instructions \n");
-        System.out.println("Enter your choice: ");
+        System.out.print("Enter your choice: ");
         int n = sc.nextInt();
+        System.out.println();
         System.out.println("----------------Toss----------------");
         System.out.println("Odd or Even");
-        System.out.println("0: Odd \n 1: Even \n");
+        System.out.println("0: Odd \n 1: Even");
         int tossChoosen = sc.nextInt();
         boolean isEven = tossChoosen == 0 ? false : true;
         System.out.print("Enter number between 1 - 6: ");
@@ -22,8 +23,12 @@ public class Main {
                 int tossResult = throwToss(isEven, choice, n);
                 if (tossResult == 1) {
                     System.out.print("You won the toss");
+                    SinglePlayer player = new SinglePlayer("User01", true);
+                    player.startGame(sc, true);
                 } else {
                     System.out.print("You loose the toss");
+                    SinglePlayer player = new SinglePlayer("User01", false);
+                    player.startGame(sc, false);
                 }
                 break;
             case 1:
