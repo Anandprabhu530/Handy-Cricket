@@ -19,6 +19,8 @@ public class SinglePlayer extends Player {
             temp += userChoice;
             System.out.println((isBatter ? "Your" : "Opponent") + " current score is: " + temp);
             setRuns(userChoice);
+            System.out.print("\033[H\033[2J");  
+            System.out.flush();
         }
 
         int[] ans = new int[2];
@@ -41,6 +43,7 @@ public class SinglePlayer extends Player {
             }
 
             // If both the batsman and bolwer use the same score
+            // check for tie
             if (ComputerGuess == userChoice) {
                 System.out.println("You " + (isBatter ? "won" : "loose"));
                 break;
