@@ -11,7 +11,7 @@ public class SinglePlayer extends Player {
         while (true) {
             System.out.println("Enter number between 1 - 6");
             int userChoice = sc.nextInt();
-            int ComputerGuess = (int) Math.floor(Math.random() * 6);
+            int ComputerGuess = (int) Math.floor(Math.random() * 6)+1;
             if (userChoice == ComputerGuess) {
                 System.out.println((isBatter ? "Your" : "Opponent") + " innings over \n");
                 break;
@@ -23,26 +23,30 @@ public class SinglePlayer extends Player {
 
         int[] ans = new int[2];
         ans = getRunsAndBallsFaced();
-        System.out.println((isBatter ? "You " : "Opponent") + " scored " + ans[0] + " runs in " + ans[0] + " balls");
+        System.out.println((isBatter ? "You" : "Opponent") + " scored " + ans[0] + " runs in " + ans[1] + " balls");
         int ballsFaced = 0;
+        temp = 0;
         while (true) {
+            System.out.println(ballsFaced);
             System.out.println("Enter number between 1 - 6");
             int userChoice = sc.nextInt();
-            int ComputerGuess = (int) Math.floor(Math.random() * 6);
-            // need to check the comparision code.
+            int ComputerGuess = (int) Math.floor(Math.random() * 6)+1;
+            temp += userChoice;
+            ballsFaced++;
+
+            // If the balls faced Exceeds your or opponents score
             if (ballsFaced > ans[1]) {
-                System.out.println((isBatter ? "Opponent " : "You") +" loose");
+                System.out.println("You " + (isBatter ? "won" : "loose"));
                 break;
             }
 
-            if (ComputerGuess == userChoice && temp < ans[0]) {
-                System.out.println("You loose");
+            // If both the batsman and bolwer use the same score
+            if (ComputerGuess == userChoice) {
+                System.out.println("You " + (isBatter ? "won" : "loose"));
                 break;
             }
-            temp += userChoice;
-            ballsFaced++;
             if (temp > ans[0] && ballsFaced <= ans[1]) {
-                System.out.println("You won");
+                System.out.println("You " + (isBatter ? "loose" : "won"));
                 break;
             }
             System.out.println((isBatter ? "Oppenent" : "Your") + " current score is: " + temp);
