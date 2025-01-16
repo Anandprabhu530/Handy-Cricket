@@ -1,3 +1,4 @@
+package src;
 public class Player {
     String name;
     private static int runs = 0;
