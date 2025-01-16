@@ -7,20 +7,20 @@ public class Main {
         System.out.println("Choose anyone option below");
         System.out.println("0: Single Player \n 1: Multi-Player \n 2: Instructions \n");
         System.out.print("Enter your choice: ");
-        int n = sc.nextInt();
-        System.out.println();
+        // int n = sc.nextInt();
         System.out.println("----------------Toss----------------");
         System.out.println("Odd or Even");
         System.out.println("0: Odd \n 1: Even");
-        int tossChoosen = sc.nextInt();
-        boolean isEven = tossChoosen == 0 ? false : true;
+        // int tossChoosen = sc.nextInt();
+        // boolean isEven = tossChoosen == 0 ? false : true;
         System.out.print("Enter number between 1 - 6: ");
-        int choice = sc.nextInt();
+        // int choice = sc.nextInt();
         System.out.println();
+        int n = 0;
         switch (n) {
             case 0:
                 // Need to implement with a inbuilt function;
-                int tossResult = throwToss(isEven, choice, n);
+                int tossResult = throwToss(true, 0, n);
                 if (tossResult == 1) {
                     System.out.print("You won the toss");
                     SinglePlayer player = new SinglePlayer("User01", true);
