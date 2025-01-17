@@ -17,10 +17,20 @@ public class MultiplayerServer{
 
             while (true) {
                 try{
-                    String msg = dataInputStream.readUTF();
-                    System.out.println(msg);
-                    String msgToSend = "Hello Client";
-                    dataOutputStream.writeUTF(msgToSend);
+                    int InitialDatafrom = dataInputStream.readInt();
+                    if (InitialDatafrom == 1) {
+                        dataOutputStream.writeInt(1);
+                    }
+                    int randomNumber = (int) Math.floor((Math.random() * 6) + 1);
+                    byte[] userToss = new byte[2];
+                    dataInputStream.read(userToss);
+                    int tempScore = randomNumber + userToss[1];
+                    if ((tempScore % 2 == 0 && userToss[0]==1) || (tempScore % 2 != 0 && userToss[0] == 0)) {
+                        dataOutputStream.writeInt(0);
+                    } else{
+                        dataOutputStream.writeInt(1);
+                    }
+                    System.exit(1);                    
                 }catch(Exception error){
                     System.err.println("An Error Occured: " + error);
                 }
