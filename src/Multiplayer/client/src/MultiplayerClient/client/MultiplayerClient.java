@@ -1,37 +1,29 @@
 package src.MultiplayerClient.client;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class MultiplayerClient {
     public static void main(String[] args) {
-        int portNumber = 8080;
-        String hostName = "127.0.0.1";
+        int portNumber = 6969;
+        try {
+            Socket socket = new Socket("localhost", portNumber);
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-        try(Socket clienSocket = new Socket(hostName,portNumber);
-            PrintWriter out = new PrintWriter(clienSocket.getOutputStream());
-            BufferedReader in = new BufferedReader(new InputStreamReader(clienSocket.getInputStream()));
-        ) {
-            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-            
-            String fromServer, fromUser;
-
-            while ((fromServer = in.readLine()) != null) {
-                System.out.println("Server:" + fromServer);
-                fromUser = stdin.readLine();
-                if (fromUser != null) {
-                    System.out.println("Client: " + fromUser);
-                    out.println(fromUser);
+            while (true) {
+                try {
+                    String msg = "Hello Server!";
+                    dataOutputStream.writeUTF(msg);
+                    String data = dataInputStream.readUTF();
+                    System.out.println(data);
+                } catch (Exception e) {
+                    System.err.println("Error: " + e);
                 }
             }
-        }catch (UnknownHostException e) {
-            System.err.println("hostName not found");
-            System.exit(1);
         } catch (Exception e) {
-            System.err.println("Unkown error:" + e);
+            System.err.println("Connection Failed: " + e);
         }
     }
 }
