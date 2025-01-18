@@ -91,6 +91,7 @@ public class MultiplayerClient {
                         System.out.println("Current Score:" + firstInningsScore + "\t\t\tNumber of Balls:" + firstInningsBalls);
                     }
                     System.exit(1);
+                    socket.close();
                 } catch (Exception e) {
                     System.err.println("Error: " + e);
                 }
