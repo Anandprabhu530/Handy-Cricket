@@ -36,12 +36,21 @@ public class MultiplayerClient {
                     } else {
                         dataOutputStream.write(toSend);
                     }
-                    int toss = dataInputStream.readInt();
-                    if (toss == 0) {
+                    byte[] readResponse = new byte[2];
+                    dataInputStream.read(readResponse);
+                    int inningsChoosen;
+                    if (readResponse[0] == 0) {
                         System.out.println("You won the toss");
+                        System.out.println("Bat or Bowl");
+                        System.out.println("0.Bat\n1.Bowl");
+                        inningsChoosen = sc.nextInt();
                     } else {
-                        System.out.println("You losse the toss");
+                        System.out.println("You loose the toss");
+                        inningsChoosen = readResponse[1];
+                        System.out.println("Opponent choose to " + (inningsChoosen==0 ? "Bat":"Bowl"));
                     }
+                    
+                    
                     System.exit(1);
                 } catch (Exception e) {
                     System.err.println("Error: " + e);
