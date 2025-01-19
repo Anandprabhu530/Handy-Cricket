@@ -35,8 +35,8 @@ public class MultiplayerServer {
 
                     int tempScore = randomNumber + userToss[1];
 
-                    System.out.println("TOSS----> Userchoice: " + userToss[1] + " Odd or Even: "
-                            + (userToss[0] == 0 ? "Even" : "Odd") + " Server Score: " + randomNumber);
+                    System.out.println("TOSS----> Userchoice: " + userToss[1] + "\nOdd or Even: "
+                            + (userToss[0] == 0 ? "Odd" : "Even") + "\nServer Score: " + randomNumber);
                     // create a byte array to respond
                     byte[] response = new byte[2];
                     // Response - 0 -> User won the toss
@@ -63,7 +63,7 @@ public class MultiplayerServer {
                     if (response[0] == 0) {
                         System.out.println("User won the Toss");
                     } else {
-                        System.out.println("Server Choose to " + (response[1]==0?"Bat":"Bowl"));
+                        System.out.println("Server Choose to " + (response[1]==0? "Bat":"Bowl"));
                     }
                     // Reply with toss.. Incase system win add system choose to bowl or Bat
                     dataOutputStream.write(response);
@@ -149,20 +149,34 @@ public class MultiplayerServer {
                         if (response[0] == randomScore && firstInningsScore > secondInningsScore
                                 && firstInningsBalls < secondInningsBalls) {
                             System.out.println("Same Score match");
-                                    System.out.println("-----------Game Over-----------");
-                            System.out.println((temp==1 ? "Server " : "Client ") + "scored " + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
+                            System.out.println("-----------Game Over-----------");
+                            System.out.println((temp == 1 ? "Server " : "Client ") + "scored " + firstInningsScore
+                                    + " in " + firstInningsBalls + " balls\n\n");
                             response[0] = -1;
                             response[1] = (byte) secondInningsScore;
+                            System.out.println((temp==1 ? "Server " : "Client ") + " loose");
                             dataOutputStream.write(response);
                             break;
                         }
 
-                        if (secondInningsScore >= firstInningsScore && firstInningsBalls >= secondInningsBalls) {
+                        if (secondInningsScore == firstInningsScore && firstInningsBalls == secondInningsBalls) {
+                            System.out.println("Tie Condition");
+                            System.out.println("-----------Game Over-----------");
+                            System.out.println((temp == 1 ? "Server " : "Client ") + "scored "
+                                    + secondInningsScore + " in " + secondInningsBalls + " balls\n\n");
+                            response[0] = -3;
+                            response[1] = (byte) secondInningsScore;
+                            dataOutputStream.write(response);
+                            break;
+                        }
+                        
+                        if (secondInningsScore > firstInningsScore && firstInningsBalls >= secondInningsBalls) {
                             System.out.println("Win Condition");
                             System.out.println("-----------Game Over-----------");
                             System.out.println((temp==1 ? "Server " : "Client ") + "scored "
-                                    + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
+                                    + secondInningsScore + " in " + secondInningsBalls + " balls\n\n");
                             response[0] = -2;
+                            System.out.println((temp==1 ? "Server " : "Client ") + "won");
                             response[1] = (byte) secondInningsScore;
                             dataOutputStream.write(response);
                             break;
@@ -170,9 +184,10 @@ public class MultiplayerServer {
 
                         if (firstInningsBalls <= secondInningsBalls && firstInningsScore > secondInningsScore) {
                             System.out.println("-----------Game Over-----------");
-                            System.out.println((temp==1 ? "Server " : "Client ") + "scored " + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
+                            System.out.println((temp==1 ? "Server " : "Client ") + "scored " + secondInningsScore + " in " + secondInningsBalls + " balls\n\n");
                             response[0] = -1;
                             response[1] = (byte) secondInningsScore;
+                            System.out.println((temp==1 ? "Server " : "Client ") + " loose");
                             dataOutputStream.write(response);
                             break;
                         }
