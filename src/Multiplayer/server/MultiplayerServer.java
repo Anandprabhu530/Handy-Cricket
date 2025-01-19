@@ -8,7 +8,8 @@ import java.net.Socket;
 import java.net.SocketException;
 
 public class MultiplayerServer {
-    private static int inningsScore = 0;
+    private static int firstInningsScore = 0;
+    private static int firstInningsBalls = 0;
 
     private final static int portNumber = 6969;
         public static void main(String[] args) throws IOException {
@@ -23,6 +24,8 @@ public class MultiplayerServer {
                     int InitialDatafrom = dataInputStream.readInt();
                     if (InitialDatafrom == 1) {
                         dataOutputStream.writeInt(1);
+                    } else {
+                        dataOutputStream.writeInt(0);
                     }
                     int randomNumber = randomNumberGenerator(6);
                     byte[] userToss = new byte[2];
@@ -32,6 +35,8 @@ public class MultiplayerServer {
 
                     int tempScore = randomNumber + userToss[1];
 
+                    System.out.println("TOSS----> Userchoice: " + userToss[1] + " Odd or Even: "
+                            + (userToss[0] == 0 ? "Even" : "Odd") + " Server Score: " + randomNumber);
                     // create a byte array to respond
                     byte[] response = new byte[2];
                     // Response - 0 -> User won the toss
@@ -55,12 +60,18 @@ public class MultiplayerServer {
                         }
                     }
 
+                    if (response[0] == 0) {
+                        System.out.println("User won the Toss");
+                    } else {
+                        System.out.println("Server Choose to " + (response[1]==0?"Bat":"Bowl"));
+                    }
                     // Reply with toss.. Incase system win add system choose to bowl or Bat
                     dataOutputStream.write(response);
 
                     // keep tack of innings Score
                     while (true) {
                         dataInputStream.read(response);
+                        firstInningsBalls++;
                         int randomScore = randomNumberGenerator(6);
                         // Check for the input score
                         // response[0] --> userScore
@@ -68,10 +79,12 @@ public class MultiplayerServer {
 
                         // If userscore and randomScore matches. Then Player is out
                         // Send back the response[0] --> -1 to identify out
-                        // Add total score response[1] --> inningsScore
+                        // Add total score response[1] --> firstInningsScore
                         if (response[0] == randomScore) {
+                            System.out.println("-----------Game Over-----------");
+                            System.out.println((response[1]==1 ? "Server " : "Client ") + "scored " + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
                             response[0] = -1;
-                            response[1] = (byte) inningsScore;
+                            response[1] = (byte) firstInningsScore;
                             dataOutputStream.write(response);
                             break;
                         }
@@ -79,17 +92,93 @@ public class MultiplayerServer {
                         // If the user is bowler then add the randomNumber to score and send it to the user
                         // response[0] --> send the score taken by system
                         // response[1] --> send the totalInnings Score
+
+                        // For logging purpose
+                        int temp = response[1];
+                        // Ends Here
+
                         if (response[1] == 1) {
                             response[0] = (byte) randomScore;
-                            response[1] = (byte) inningsScore;
-                            inningsScore += randomScore;
+                            response[1] = (byte) firstInningsScore;
+                            firstInningsScore += randomScore;
                         } else {
 
                             // If the user is Batsman, add userscore and send it to User
                             // response[0] --> send the score taken by User
                             // response[1] --> send the totalInnings Score
-                            inningsScore += response[0];
+                            firstInningsScore += response[0];
                         }
+                        System.out.println((temp==1 ? "Server " : "Client ") + "scored " + firstInningsScore + " in " + firstInningsBalls + " balls");
+                        dataOutputStream.write(response);
+                    }
+
+                    int secondInningsScore = 0, secondInningsBalls = 0;
+                    while (true) {
+                        // Second Innings
+                        dataInputStream.read(response);
+                        secondInningsBalls++;
+
+                        int randomScore = randomNumberGenerator(6);
+                        // Check for the input score
+                        // response[0] --> userScore
+                        // response[1] --> Batsman (0) or Bowler(1)
+
+                        // If the user is bowler then add the randomNumber to score and send it to the user
+                        // response[0] --> send the score taken by system
+                        // response[1] --> send the totalInnings Score
+                        
+                        // For logging purpose
+                        int temp = response[1];
+                        // Ends Here
+
+                        if (response[1] == 1) {
+                            response[0] = (byte) randomScore;
+                            response[1] = (byte) secondInningsScore;
+                            secondInningsScore += randomScore;
+                        } else {
+
+                            // If the user is Batsman, add userscore and send it to User
+                            // response[0] --> send the score taken by User
+                            // response[1] --> send the totalInnings Score
+                            secondInningsScore += response[0];
+                        }
+
+                        // If userscore and randomScore matches. Then Player is out
+                        // Send back the response[0] --> -1 to identify out
+                        // Add total score response[1] --> secondInningsScore
+                        if (response[0] == randomScore && firstInningsScore > secondInningsScore
+                                && firstInningsBalls < secondInningsBalls) {
+                            System.out.println("Same Score match");
+                                    System.out.println("-----------Game Over-----------");
+                            System.out.println((temp==1 ? "Server " : "Client ") + "scored " + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
+                            response[0] = -1;
+                            response[1] = (byte) secondInningsScore;
+                            dataOutputStream.write(response);
+                            break;
+                        }
+
+                        if (secondInningsScore >= firstInningsScore && firstInningsBalls >= secondInningsBalls) {
+                            System.out.println("Win Condition");
+                            System.out.println("-----------Game Over-----------");
+                            System.out.println((temp==1 ? "Server " : "Client ") + "scored "
+                                    + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
+                            response[0] = -2;
+                            response[1] = (byte) secondInningsScore;
+                            dataOutputStream.write(response);
+                            break;
+                        }
+
+                        if (firstInningsBalls <= secondInningsBalls && firstInningsScore > secondInningsScore) {
+                            System.out.println("-----------Game Over-----------");
+                            System.out.println((temp==1 ? "Server " : "Client ") + "scored " + firstInningsScore + " in " + firstInningsBalls + " balls\n\n");
+                            response[0] = -1;
+                            response[1] = (byte) secondInningsScore;
+                            dataOutputStream.write(response);
+                            break;
+                        }
+                        
+                        // swap server and client
+                        System.out.println((temp==1 ? "Server " : "Client ") + "scored " + secondInningsScore + " in " + secondInningsBalls + " balls");
                         dataOutputStream.write(response);
                     }
                 } catch (SocketException error) {

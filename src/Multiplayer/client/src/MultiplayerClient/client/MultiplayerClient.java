@@ -6,6 +6,11 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class MultiplayerClient {
+    private static int firstInningsScore = 0;
+    private static int firstInningsBalls = 0;
+    private static int secondInningsScore = 0;
+    private static int secondInningsBalls = 0;
+
     public static void main(String[] args) {
         int portNumber = 6969;
         Scanner sc = new Scanner(System.in);
@@ -57,14 +62,14 @@ public class MultiplayerClient {
 
                     System.out.println("Now you are " + (inningsChoosen == 0 ? "Batting" : "Bowling"));
 
-                    int firstInningsScore = 0, firstInningsBalls = 0;
                     byte[] innings = new byte[2];
 
                     while (true) {
                         int score = getScore(sc);
 
                         // Do not allow score less than 1 or greater than 6
-                        while (score <= 0 || score > 6) score = getScore(sc);
+                        while (score <= 0 || score > 6)
+                            score = getScore(sc);
                         System.out.println();
 
                         // Store the score and state(Batsman or Bowler) in innings
@@ -72,26 +77,25 @@ public class MultiplayerClient {
                         innings[1] = (byte) inningsChoosen;
                         dataOutputStream.write(innings);
 
+                        firstInningsBalls++;
+
                         dataInputStream.read(innings);
                         if (innings[0] == -1) {
                             System.out.println("Game Over!");
                             if (inningsChoosen == 0) {
-                                System.out.println("You scored" + innings[1]);
+                                System.out.println("You scored " + innings[1]);
                             } else {
                                 System.out.println("Opponent scored " + innings[1]);
                             }
-                            break;
+                            secondInnings(inningsChoosen, innings, dataOutputStream, dataInputStream, sc, socket);
                         }
                         if (inningsChoosen == 0) {
                             firstInningsScore += score;
                         } else {
                             firstInningsScore += innings[0];
                         }
-                        firstInningsBalls++;
                         System.out.println("Current Score:" + firstInningsScore + "\t\t\tNumber of Balls:" + firstInningsBalls);
                     }
-                    System.exit(1);
-                    socket.close();
                 } catch (Exception e) {
                     System.err.println("Error: " + e);
                 }
@@ -122,7 +126,7 @@ public class MultiplayerClient {
         return sc.nextInt();
     }
 
-    public static int twoChoice(Scanner sc,int useCase) {
+    public static int twoChoice(Scanner sc, int useCase) {
         if (useCase == 0) {
             System.out.println("Choose Odd or Even");
             System.out.println("0.Odd\n1.Even");
@@ -131,5 +135,69 @@ public class MultiplayerClient {
             System.out.println("0.Bat\n1.Bowl");
         }
         return sc.nextInt();
+    }
+    
+    public static void secondInnings(int inningsChoosen, byte[] innings, DataOutputStream dataOutputStream, DataInputStream dataInputStream, Scanner sc, Socket socket) {
+
+        // flip bat and bowl
+        inningsChoosen = inningsChoosen == 0 ? 1 : 0;
+
+        int target = innings[1];
+        
+        System.out.println((inningsChoosen == 0 ? "You" : "Opponent") + " need to score " + target + " in "
+                + firstInningsBalls + " balls");
+        
+        try {
+            while (true) {
+                int score = getScore(sc);
+
+                // Do not allow score less than 1 or greater than 6
+                while (score <= 0 || score > 6)
+                    score = getScore(sc);
+                System.out.println();
+
+                // Store the score and state(Batsman or Bowler) in innings
+                innings[0] = (byte) score;
+                innings[1] = (byte) inningsChoosen;
+                dataOutputStream.write(innings);
+
+                secondInningsBalls++;
+
+                dataInputStream.read(innings);
+                if (innings[0] == -1) {
+                    System.out.println("Game Over!");
+                    if (inningsChoosen == 0) {
+                        System.out.println("You loose");
+                    } else {
+                        System.out.println("Opponent loose");
+                    }
+                    break;
+                }
+
+                if (innings[0] == -2) {
+                    System.out.println("Game Over!");
+                    if (inningsChoosen == 0) {
+                        System.out.println("You won");
+                    } else {
+                        System.out.println("Opponent won");
+                    }
+                    break;
+                }
+
+                if (inningsChoosen == 0) {
+                    secondInningsScore += score;
+                } else {
+                    secondInningsScore += innings[0];
+                }
+                System.out
+                        .println("Current Score:" + secondInningsScore + "\t\t\tNumber of Balls:" + firstInningsBalls);
+
+            }
+            System.exit(1);
+            socket.close();
+        } catch (Exception e) {
+            // TODO: handle exception
+            System.err.println("An Error occured: " + e);
+        }
     }
 }
