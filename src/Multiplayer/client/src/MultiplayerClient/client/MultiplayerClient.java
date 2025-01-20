@@ -30,7 +30,7 @@ public class MultiplayerClient {
                     if (serverCheck != 1) {
                         throw new Error("Server Not ready!");
                     }
-                    System.out.println("---------Game Starts---------\n\n");
+                    System.out.println("---------Game Starts---------\n");
 
                     // get toss status
                     // getToss[0] --> Odd or Even
@@ -47,18 +47,18 @@ public class MultiplayerClient {
                     dataInputStream.read(readResponse);
                     int inningsChoosen;
                     if (readResponse[0] == 0) {
-                        System.out.println("\nYou won the toss");
+                        System.out.println("\nYou won the toss\n");
                         
                         // Choose Bat or Bowl
                         inningsChoosen = twoChoice(sc, 1);
                         while (inningsChoosen < 0 || inningsChoosen > 1)    inningsChoosen = twoChoice(sc, 1);
-                        System.out.println("Now you are " + (inningsChoosen == 0 ? "Batting" : "Bowling"));
+                        System.out.println("Now you are " + (inningsChoosen == 0 ? "Batting" : "Bowling")+ "\n");
 
                     } else {
-                        System.out.println("\nYou loose the toss");
+                        System.out.println("\nYou loose the toss\n");
                         inningsChoosen = readResponse[1];
                         System.out.println("Opponent choose to " + (inningsChoosen == 0 ? "Bat" : "Bowl"));
-                        System.out.println("Now you are " + (inningsChoosen == 0 ? "Bowling" : "Batting"));
+                        System.out.println("Now you are " + (inningsChoosen == 0 ? "Bowling" : "Batting") + "\n");
                         
                         // swap values since it is servers choice
                         inningsChoosen = inningsChoosen == 0 ? 1 : 0;
@@ -86,11 +86,11 @@ public class MultiplayerClient {
 
                         dataInputStream.read(innings);
                         if (innings[0] == -1) {
-                            System.out.println("Game Over!");
+                            System.out.println("-----------First Innings Over!-----------");
                             if (inningsChoosen == 0) {
-                                System.out.println("You scored " + innings[1]);
+                                System.out.println("You scored " + innings[1] + "\n");
                             } else {
-                                System.out.println("Opponent scored " + innings[1]);
+                                System.out.println("Opponent scored " + innings[1] + "\n");
                             }
                             secondInnings(inningsChoosen, innings, dataOutputStream, dataInputStream, sc, socket);
                         }
@@ -99,7 +99,7 @@ public class MultiplayerClient {
                         } else {
                             firstInningsScore += innings[0];
                         }
-                        System.out.println("Current Score:" + firstInningsScore + "\t\t\tNumber of Balls:" + firstInningsBalls);
+                        System.out.println("Current Score: " + firstInningsScore + "\t\t\tNumber of Balls: " + firstInningsBalls);
                     }
                 } catch (Exception e) {
                     System.err.println("Error: " + e);
@@ -120,7 +120,7 @@ public class MultiplayerClient {
         int oddOrEven = twoChoice(sc, 0);
         while (oddOrEven < 0 || oddOrEven > 1) oddOrEven = twoChoice(sc, 0);
 
-        System.out.print("Enter a number between 1 - 6: ");
+        System.out.print("\nEnter a number between 1 - 6: ");
         int tossChoice = getScore(sc);
 
         // Check for score between 1-6 or else retry until you get one
@@ -135,11 +135,11 @@ public class MultiplayerClient {
 
     public static int twoChoice(Scanner sc, int useCase) {
         if (useCase == 0) {
-            System.out.println("Choose Odd or Even");
             System.out.println("0.Odd\n1.Even");
+            System.out.print("Choose Odd or Even: ");
         } else {
-            System.out.println("Bat or Bowl");
             System.out.println("0.Bat\n1.Bowl");
+            System.out.print("Bat or Bowl: ");
         }
         return sc.nextInt();
     }
@@ -151,8 +151,7 @@ public class MultiplayerClient {
 
         int target = innings[1];
         
-        System.out.println((inningsChoosen == 0 ? "You" : "Opponent") + " need to score " + target + " in "
-                + firstInningsBalls + " balls");
+        System.out.println((inningsChoosen == 0 ? "You" : "Opponent") + " need to score " + target + " in " + firstInningsBalls + " balls. \n");
         
         try {
             while (true) {
@@ -182,7 +181,7 @@ public class MultiplayerClient {
                 }
 
                 if (innings[0] == -2) {
-                    System.out.println("Game Over!");
+                    System.out.println("--------------Game Over--------------");
                     if (inningsChoosen == 0) {
                         System.out.println("You won");
                     } else {
@@ -200,14 +199,12 @@ public class MultiplayerClient {
                 } else {
                     secondInningsScore += innings[0];
                 }
-                System.out
-                        .println("Current Score:" + secondInningsScore + "\t\t\tNumber of Balls:" + secondInningsBalls);
+                System.out.println("Current Score: " + secondInningsScore + "\t\t\tNumber of Balls: " + secondInningsBalls);
 
             }
             System.exit(1);
             socket.close();
         } catch (Exception e) {
-            // TODO: handle exception
             System.err.println("An Error occured: " + e);
         }
     }

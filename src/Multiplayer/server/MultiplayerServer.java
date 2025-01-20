@@ -154,7 +154,7 @@ public class MultiplayerServer {
                                     + " in " + firstInningsBalls + " balls\n\n");
                             response[0] = -1;
                             response[1] = (byte) secondInningsScore;
-                            System.out.println((temp==1 ? "Server " : "Client ") + " loose");
+                            System.out.println((temp==1 ? "Server " : "Client ") + "loose");
                             dataOutputStream.write(response);
                             break;
                         }
