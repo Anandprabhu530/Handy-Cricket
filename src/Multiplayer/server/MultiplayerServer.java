@@ -7,10 +7,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-public class MultiplayerServer {
+public class MultiplayerServer{
     private static int firstInningsScore = 0;
     private static int firstInningsBalls = 0;
 
+    
     private final static int portNumber = 6969;
         public static void main(String[] args) throws IOException {
             try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
