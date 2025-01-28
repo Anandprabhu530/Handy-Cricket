@@ -10,20 +10,17 @@ import java.util.HashSet;
 
 class SharedHashSet {
     private static HashSet<Integer> set = new HashSet<>();
-
-    private SharedHashSet() {
-    };
-    
+    private SharedHashSet() {};
     public static HashSet<Integer> getHashSet() {
         return set;
     }
 }
 
-public class GameServer {    
+public class GameServer {
     public static void main(String[] args) {
         try {
             ServerSocket serverSocket = new ServerSocket(6969);
-           
+
             System.out.println("Started");
 
             byte[] response = new byte[2];
@@ -32,18 +29,33 @@ public class GameServer {
             while (true) {
                 System.out.println("Scanning");
                 Socket clientSocket = serverSocket.accept();
-                ClientHandler clientHandler = new ClientHandler(clientSocket,response,userChoice);
+                ClientHandler clientHandler = new ClientHandler(clientSocket, response, userChoice);
                 new Thread(clientHandler).start();
             }
-            
-
-            
         } catch (Exception e) {
             // TODO: handle exception
             System.err.println("An error occured: " + e);
         }
     }
+
+}
+
+class Player {
+    private String name;
+    private boolean isBatting;
+    private int score;
+    private int noOfBalls;
     
+    Player(String name) {
+        this.name = name;
+    }
+}
+
+class GameRoom {
+    private Player player01;
+    private Player player02;
+    private int roomCode;
+    private boolean isGameStarted;  
 }
 
 class ClientHandler implements Runnable{
@@ -58,9 +70,9 @@ class ClientHandler implements Runnable{
     }
 
     public static int roomCodeGenerator() {
-        return (int) Math.floor(Math.random() * ((124 - 0) + 1));
+        return (int) Math.floor(Math.random() * ((9999 - 1000) + 1));
     }
-    
+
     HashSet<Integer> set = SharedHashSet.getHashSet();
     
     public void run() {
