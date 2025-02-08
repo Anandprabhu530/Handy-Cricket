@@ -37,8 +37,20 @@ public class GameClient {
 
             // Read response from Server
             dataInputStream.read(msg);
-            int roomCode = ByteBuffer.wrap(msg, 1, 4).getInt();
-            System.out.println("RoomCode: " + roomCode);
+            int status = msg[0];
+            if (status == 1) {
+                int roomCode = ByteBuffer.wrap(msg, 1, 4).getInt();
+                System.out.println("RoomCode: " + roomCode);
+                System.out.println("Joined room successfully");
+            } else if (status == 2) {
+                System.out.println("Room Already Full");
+            } else {
+                System.out.println("Room Not Found");
+            }
+
+            int temp = dataInputStream.read();
+            System.out.println(temp);
+            int njd = sc.nextInt();
         } catch (Exception e) {
             System.out.println("Unable to connect to server: " + e);
         }

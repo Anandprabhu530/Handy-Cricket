@@ -9,8 +9,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.imageio.plugins.bmp.BMPImageWriteParam;
-
 class sharedHashMap {
     private static HashMap<Integer, GameRoom> recordBook = new HashMap<>();
 
@@ -80,6 +78,10 @@ class GameRoom {
     }
 }
 
+// store the Player Id - int is better
+// and store it with socket in a hashmap.
+// have a method to find current player turn and
+// change according to it.
 class ClientHandler implements Runnable {
     private Socket clientSocket;
     private byte[] response;
@@ -114,27 +116,31 @@ class ClientHandler implements Runnable {
                     // Total response array size id 5
                     // response[0] -> represents room created successfully
                     // Next 4 byte will for the int roomcode
+                    // 1 - room created successfully
                     response[0] = 1;
                     ByteBuffer.wrap(response, 1, 4).putInt(roomCode);
                     System.out.println("Room Created Successfully \nRoom code: " + roomCode);
                     break;
                 case 1:
                     System.out.println(recordBook);
-
                     int userRoomCode = ByteBuffer.wrap(response, 1, 4).getInt();
                     System.out.println(userRoomCode);
                     if (recordBook.containsKey(userRoomCode)) {
                         GameRoom obj = recordBook.get(userRoomCode);
                         ArrayList<Player> temp = obj.getAllPlayer();
                         if (temp.size() == 2) {
+                            // 2 for room full
+                            response[0] = (byte) 2;
                             System.out.println("Room full");
-                            return;
+                            break;
                         } else {
                             Player player02 = new Player("Test Player22");
                             obj.addPlayer(player02);
                             System.out.println("Joined Room");
+                            response[0] = (byte) 1;
                         }
                     } else {
+                        // -1 for room not found
                         response[0] = (byte) -1;
                         System.out.println("Room Not Found");
                     }
@@ -142,6 +148,7 @@ class ClientHandler implements Runnable {
             }
             System.out.println("User reached here");
             dataOutputStream.write(response);
+            dataOutputStream.write(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
