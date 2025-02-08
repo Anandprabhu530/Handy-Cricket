@@ -5,14 +5,20 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashSet;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
 
+import javax.imageio.plugins.bmp.BMPImageWriteParam;
 
-class SharedHashSet {
-    private static HashSet<Integer> set = new HashSet<>();
-    private SharedHashSet() {};
-    public static HashSet<Integer> getHashSet() {
-        return set;
+class sharedHashMap {
+    private static HashMap<Integer, GameRoom> recordBook = new HashMap<>();
+
+    private sharedHashMap() {
+    };
+
+    public static HashMap<Integer, GameRoom> getRecordBook() {
+        return recordBook;
     }
 }
 
@@ -23,9 +29,9 @@ public class GameServer {
 
             System.out.println("Started");
 
-            byte[] response = new byte[2];
+            byte[] response = new byte[5];
             byte[] userChoice = new byte[2];
-            //33, 126
+            // 33, 126
             while (true) {
                 System.out.println("Scanning");
                 Socket clientSocket = serverSocket.accept();
@@ -45,20 +51,36 @@ class Player {
     private boolean isBatting;
     private int score;
     private int noOfBalls;
-    
+
     Player(String name) {
         this.name = name;
     }
 }
 
 class GameRoom {
-    private Player player01;
-    private Player player02;
+    private ArrayList<Player> players;
     private int roomCode;
-    private boolean isGameStarted;  
+    private boolean isGameStarted;
+
+    GameRoom(int roomCode) {
+        this.players = new ArrayList<>();
+        this.roomCode = roomCode;
+    }
+
+    ArrayList<Player> getAllPlayer() {
+        return players;
+    }
+
+    int addPlayer(Player player) {
+        if (players.size() == 2) {
+            return -1;
+        }
+        players.add(player);
+        return 1;
+    }
 }
 
-class ClientHandler implements Runnable{
+class ClientHandler implements Runnable {
     private Socket clientSocket;
     private byte[] response;
     private byte[] userChoice;
@@ -73,31 +95,48 @@ class ClientHandler implements Runnable{
         return (int) Math.floor(Math.random() * ((9999 - 1000) + 1));
     }
 
-    HashSet<Integer> set = SharedHashSet.getHashSet();
-    
+    HashMap<Integer, GameRoom> recordBook = sharedHashMap.getRecordBook();
+
     public void run() {
         try (DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream())) {
             DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
             dataInputStream.read(userChoice);
-
-                    
             switch ((int) userChoice[0]) {
                 case 0:
                     int roomCode = roomCodeGenerator();
-                    while (!set.isEmpty() && set.contains(roomCode)) roomCode = roomCodeGenerator();
-                    set.add(roomCode);
-                    response[0] = (byte) 0;
-                    response[1] = (byte) roomCode;
-                    System.out.println("Room code: " + roomCode);
+                    while (!recordBook.isEmpty() && recordBook.containsKey(roomCode))
+                        roomCode = roomCodeGenerator();
+                    Player player01 = new Player("Test Player11");
+                    GameRoom room = new GameRoom(roomCode);
+                    room.addPlayer(player01);
+                    recordBook.put(roomCode, room);
+
+                    // Total response array size id 5
+                    // response[0] -> represents room created successfully
+                    // Next 4 byte will for the int roomcode
+                    response[0] = 1;
+                    ByteBuffer.wrap(response, 1, 4).putInt(roomCode);
+                    System.out.println("Room Created Successfully \nRoom code: " + roomCode);
                     break;
                 case 1:
-                    System.out.println(set);
-                    if (set.contains((int) userChoice[1])) {
-                        response[0] = (byte) 1;
-                        System.out.println("Found");
+                    System.out.println(recordBook);
+
+                    int userRoomCode = ByteBuffer.wrap(response, 1, 4).getInt();
+                    System.out.println(userRoomCode);
+                    if (recordBook.containsKey(userRoomCode)) {
+                        GameRoom obj = recordBook.get(userRoomCode);
+                        ArrayList<Player> temp = obj.getAllPlayer();
+                        if (temp.size() == 2) {
+                            System.out.println("Room full");
+                            return;
+                        } else {
+                            Player player02 = new Player("Test Player22");
+                            obj.addPlayer(player02);
+                            System.out.println("Joined Room");
+                        }
                     } else {
                         response[0] = (byte) -1;
-                        System.out.println("Not Found");
+                        System.out.println("Room Not Found");
                     }
                     break;
             }

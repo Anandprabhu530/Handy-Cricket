@@ -4,10 +4,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class GameClient{
+public class GameClient {
     public static void main(String[] args) throws IOException {
         System.out.println("Welcome to Game");
         Scanner sc = new Scanner(System.in);
@@ -19,23 +20,27 @@ public class GameClient{
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-            byte[] roomInput = new byte[2];
+            byte[] roomInput = new byte[5];
 
             roomInput[0] = n == 0 ? (byte) 0 : 1;
             if (n == 1) {
                 System.out.print("\nEnter room code: ");
                 int roomCode = sc.nextInt();
-                roomInput[1] = (byte) roomCode;
+                // Add roomCode to the byte array
+                ByteBuffer.wrap(roomInput, 1, 4).putInt(roomCode);
             }
+            // Write to the server
             dataOutputStream.write(roomInput);
-            byte[] msg = new byte[2];
 
+            // Byte Array to read response from server
+            byte[] msg = new byte[5];
+
+            // Read response from Server
             dataInputStream.read(msg);
-            System.out.println("msg[0]: " +msg[0] + "     msg[1]: " +msg[1]);
+            int roomCode = ByteBuffer.wrap(msg, 1, 4).getInt();
+            System.out.println("RoomCode: " + roomCode);
         } catch (Exception e) {
             System.out.println("Unable to connect to server: " + e);
         }
     }
 }
-
-
