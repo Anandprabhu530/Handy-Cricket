@@ -113,9 +113,10 @@ class ClientHandler implements Runnable {
 
             zeroOrOne = dataInputStream.readByte();
 
+            // If this does not work try with Setter insted of constructor
+            DataOutputStream player01DataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
             // Player - 1
-            Player player01 = new Player("Test Player11", new DataOutputStream(clientSocket.getOutputStream()));
-            DataOutputStream player01DataOutputStream = player01.getDataOutputStream();
+            Player player01 = new Player("Test Player11", player01DataOutputStream);
 
             // Player - 2
             Player player02 = null;
