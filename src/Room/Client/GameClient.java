@@ -20,17 +20,18 @@ public class GameClient {
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-            byte[] roomInput = new byte[5];
-
-            roomInput[0] = n == 0 ? (byte) 0 : 1;
+            byte[] roomInput = new byte[4];
+            byte ZeroOrOne = n == 0 ? (byte) 0 : 1;
+            dataOutputStream.writeByte(ZeroOrOne);
             if (n == 1) {
                 System.out.print("\nEnter room code: ");
                 int roomCode = sc.nextInt();
                 // Add roomCode to the byte array
-                ByteBuffer.wrap(roomInput, 1, 4).putInt(roomCode);
+                ByteBuffer.wrap(roomInput, 0, 4).putInt(roomCode);
+                System.out.println(ByteBuffer.wrap(roomInput, 0, 4).getInt());
+                dataOutputStream.write(roomInput);
             }
             // Write to the server
-            dataOutputStream.write(roomInput);
 
             // Byte Array to read response from server
             byte[] msg = new byte[5];
@@ -48,9 +49,9 @@ public class GameClient {
                 System.out.println("Room Not Found");
             }
 
-            int temp = dataInputStream.read();
-            System.out.println(temp);
-            int njd = sc.nextInt();
+            byte[] temp = new byte[5];
+            dataInputStream.read(temp);
+            System.out.println(temp[0]);
         } catch (Exception e) {
             System.out.println("Unable to connect to server: " + e);
         }

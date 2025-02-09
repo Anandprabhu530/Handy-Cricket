@@ -28,7 +28,7 @@ public class GameServer {
             System.out.println("Started");
 
             byte[] response = new byte[5];
-            byte[] userChoice = new byte[2];
+            byte[] userChoice = new byte[4];
             // 33, 126
             while (true) {
                 System.out.println("Scanning");
@@ -41,7 +41,6 @@ public class GameServer {
             System.err.println("An error occured: " + e);
         }
     }
-
 }
 
 class Player {
@@ -49,10 +48,17 @@ class Player {
     private boolean isBatting;
     private int score;
     private int noOfBalls;
+    private DataOutputStream dataOutputStream;
 
-    Player(String name) {
+    Player(String name, DataOutputStream dataOutputStream) {
         this.name = name;
+        this.dataOutputStream = dataOutputStream;
     }
+
+    public DataOutputStream getDataOutputStream() {
+        return dataOutputStream;
+    }
+
 }
 
 class GameRoom {
@@ -78,14 +84,16 @@ class GameRoom {
     }
 }
 
-// store the Player Id - int is better
-// and store it with socket in a hashmap.
-// have a method to find current player turn and
-// change according to it.
 class ClientHandler implements Runnable {
+    // Status Codes
+    private static final byte SUCCESS_SERVER_RESPONSE = 1;
+    private static final byte SERVER_FULL = 2;
+    private static final byte ROOM_NOT_FOUND = -1;
+
     private Socket clientSocket;
     private byte[] response;
     private byte[] userChoice;
+    private byte zeroOrOne;
 
     ClientHandler(Socket socket, byte[] response, byte[] userChoice) {
         this.clientSocket = socket;
@@ -102,53 +110,54 @@ class ClientHandler implements Runnable {
     public void run() {
         try (DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream())) {
             DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-            dataInputStream.read(userChoice);
-            switch ((int) userChoice[0]) {
+            zeroOrOne = dataInputStream.readByte();
+            switch ((int) zeroOrOne) {
                 case 0:
                     int roomCode = roomCodeGenerator();
                     while (!recordBook.isEmpty() && recordBook.containsKey(roomCode))
                         roomCode = roomCodeGenerator();
-                    Player player01 = new Player("Test Player11");
+                    Player player01 = new Player("Test Player11", dataOutputStream);
                     GameRoom room = new GameRoom(roomCode);
+                    DataOutputStream player01DataOutputStream = player01.getDataOutputStream();
                     room.addPlayer(player01);
                     recordBook.put(roomCode, room);
-
-                    // Total response array size id 5
-                    // response[0] -> represents room created successfully
-                    // Next 4 byte will for the int roomcode
-                    // 1 - room created successfully
-                    response[0] = 1;
+                    response[0] = SUCCESS_SERVER_RESPONSE;
                     ByteBuffer.wrap(response, 1, 4).putInt(roomCode);
                     System.out.println("Room Created Successfully \nRoom code: " + roomCode);
+                    player01DataOutputStream.write(response);
+
                     break;
                 case 1:
                     System.out.println(recordBook);
-                    int userRoomCode = ByteBuffer.wrap(response, 1, 4).getInt();
-                    System.out.println(userRoomCode);
+
+                    dataInputStream.read(userChoice);
+                    Player player02 = new Player("Test Player22", dataOutputStream);
+                    DataOutputStream player02DataOutputStream = player02.getDataOutputStream();
+
+                    int userRoomCode = ByteBuffer.wrap(userChoice, 0, 4).getInt();
+                    System.out.println("User room Code: " + userRoomCode);
+
                     if (recordBook.containsKey(userRoomCode)) {
                         GameRoom obj = recordBook.get(userRoomCode);
-                        ArrayList<Player> temp = obj.getAllPlayer();
-                        if (temp.size() == 2) {
-                            // 2 for room full
-                            response[0] = (byte) 2;
-                            System.out.println("Room full");
+                        obj.addPlayer(player02);
+                        ArrayList<Player> totalPlayers = obj.getAllPlayer();
+                        System.out.println("Array List:" + totalPlayers);
+                        if (totalPlayers.size() > 2) {
+                            response[0] = SERVER_FULL;
+                            System.out.println("Room Full");
                             break;
                         } else {
-                            Player player02 = new Player("Test Player22");
-                            obj.addPlayer(player02);
                             System.out.println("Joined Room");
-                            response[0] = (byte) 1;
+                            response[0] = SUCCESS_SERVER_RESPONSE;
                         }
                     } else {
-                        // -1 for room not found
-                        response[0] = (byte) -1;
+                        response[0] = ROOM_NOT_FOUND;
                         System.out.println("Room Not Found");
                     }
+                    player02DataOutputStream.write(response);
                     break;
             }
-            System.out.println("User reached here");
-            dataOutputStream.write(response);
-            dataOutputStream.write(0);
+            System.out.println("----End----");
         } catch (IOException e) {
             e.printStackTrace();
         }
