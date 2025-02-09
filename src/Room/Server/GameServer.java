@@ -86,8 +86,9 @@ class GameRoom {
 
 class ClientHandler implements Runnable {
     // Status Codes
-    private static final byte SUCCESS_SERVER_RESPONSE = 1;
-    private static final byte SERVER_FULL = 2;
+    private static final byte ROOM_CREATION_SUCCESSFUL = 1;
+    private static final byte GAME_READY_TO_START = 2;
+    private static final byte SERVER_FULL = 3;
     private static final byte ROOM_NOT_FOUND = -1;
 
     private Socket clientSocket;
@@ -109,30 +110,36 @@ class ClientHandler implements Runnable {
 
     public void run() {
         try (DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream())) {
-            DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
+
             zeroOrOne = dataInputStream.readByte();
+
+            // Player - 1
+            Player player01 = new Player("Test Player11", new DataOutputStream(clientSocket.getOutputStream()));
+            DataOutputStream player01DataOutputStream = player01.getDataOutputStream();
+
+            // Player - 2
+            Player player02 = null;
+            DataOutputStream player02DataOutputStream = null;
+
             switch ((int) zeroOrOne) {
                 case 0:
                     int roomCode = roomCodeGenerator();
                     while (!recordBook.isEmpty() && recordBook.containsKey(roomCode))
                         roomCode = roomCodeGenerator();
-                    Player player01 = new Player("Test Player11", dataOutputStream);
                     GameRoom room = new GameRoom(roomCode);
-                    DataOutputStream player01DataOutputStream = player01.getDataOutputStream();
                     room.addPlayer(player01);
                     recordBook.put(roomCode, room);
-                    response[0] = SUCCESS_SERVER_RESPONSE;
+                    response[0] = ROOM_CREATION_SUCCESSFUL;
                     ByteBuffer.wrap(response, 1, 4).putInt(roomCode);
                     System.out.println("Room Created Successfully \nRoom code: " + roomCode);
                     player01DataOutputStream.write(response);
-
                     break;
                 case 1:
                     System.out.println(recordBook);
-
                     dataInputStream.read(userChoice);
-                    Player player02 = new Player("Test Player22", dataOutputStream);
-                    DataOutputStream player02DataOutputStream = player02.getDataOutputStream();
+
+                    player02 = new Player("Test Player22", new DataOutputStream(clientSocket.getOutputStream()));
+                    player02DataOutputStream = player02.getDataOutputStream();
 
                     int userRoomCode = ByteBuffer.wrap(userChoice, 0, 4).getInt();
                     System.out.println("User room Code: " + userRoomCode);
@@ -148,15 +155,20 @@ class ClientHandler implements Runnable {
                             break;
                         } else {
                             System.out.println("Joined Room");
-                            response[0] = SUCCESS_SERVER_RESPONSE;
+                            response[0] = GAME_READY_TO_START;
                         }
                     } else {
                         response[0] = ROOM_NOT_FOUND;
                         System.out.println("Room Not Found");
                     }
                     player02DataOutputStream.write(response);
+
+                    // Testing purpose only
+                    byte[] temp = { 5, 0, 0, 0, 0 };
+                    player01DataOutputStream.write(temp);
                     break;
             }
+
             System.out.println("----End----");
         } catch (IOException e) {
             e.printStackTrace();

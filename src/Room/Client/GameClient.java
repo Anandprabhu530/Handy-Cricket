@@ -23,6 +23,7 @@ public class GameClient {
             byte[] roomInput = new byte[4];
             byte ZeroOrOne = n == 0 ? (byte) 0 : 1;
             dataOutputStream.writeByte(ZeroOrOne);
+
             if (n == 1) {
                 System.out.print("\nEnter room code: ");
                 int roomCode = sc.nextInt();
@@ -31,7 +32,6 @@ public class GameClient {
                 System.out.println(ByteBuffer.wrap(roomInput, 0, 4).getInt());
                 dataOutputStream.write(roomInput);
             }
-            // Write to the server
 
             // Byte Array to read response from server
             byte[] msg = new byte[5];
@@ -42,16 +42,22 @@ public class GameClient {
             if (status == 1) {
                 int roomCode = ByteBuffer.wrap(msg, 1, 4).getInt();
                 System.out.println("RoomCode: " + roomCode);
-                System.out.println("Joined room successfully");
+                System.out.println("Waiting for Player...");
             } else if (status == 2) {
+                System.out.println("Joined room successfully");
+            } else if (status == 3) {
                 System.out.println("Room Already Full");
             } else {
                 System.out.println("Room Not Found");
             }
 
-            byte[] temp = new byte[5];
-            dataInputStream.read(temp);
-            System.out.println(temp[0]);
+            while (true) {
+                byte[] temp = new byte[5];
+                dataInputStream.read(temp);
+                if (temp[0] == 5) {
+                    System.out.println("Game Started");
+                }
+            }
         } catch (Exception e) {
             System.out.println("Unable to connect to server: " + e);
         }
