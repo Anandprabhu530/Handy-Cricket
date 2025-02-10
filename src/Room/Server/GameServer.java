@@ -5,60 +5,34 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class sharedHashMap {
-    private static HashMap<Integer, GameRoom> recordBook = new HashMap<>();
-
-    private sharedHashMap() {
-    };
-
-    public static HashMap<Integer, GameRoom> getRecordBook() {
-        return recordBook;
-    }
-}
-
-public class GameServer {
-    public static void main(String[] args) {
-        try {
-            ServerSocket serverSocket = new ServerSocket(6969);
-
-            System.out.println("Started");
-
-            byte[] response = new byte[5];
-            byte[] userChoice = new byte[4];
-            // 33, 126
-            while (true) {
-                System.out.println("Scanning");
-                Socket clientSocket = serverSocket.accept();
-                ClientHandler clientHandler = new ClientHandler(clientSocket, response, userChoice);
-                new Thread(clientHandler).start();
-            }
-        } catch (Exception e) {
-            // TODO: handle exception
-            System.err.println("An error occured: " + e);
-        }
-    }
-}
-
 class Player {
     private String name;
-    private boolean isBatting;
-    private int score;
-    private int noOfBalls;
-    private DataOutputStream dataOutputStream;
+    public boolean isBatting;
+    public int score;
+    public int noOfBalls;
+    private DataOutputStream outputStream;
 
-    Player(String name, DataOutputStream dataOutputStream) {
+    Player(String name, DataOutputStream outputStream) {
         this.name = name;
-        this.dataOutputStream = dataOutputStream;
+        this.outputStream = outputStream;
+        this.score = 0;
+        this.noOfBalls = 0;
     }
 
-    public DataOutputStream getDataOutputStream() {
-        return dataOutputStream;
+    public DataOutputStream getOutputStream() {
+        return outputStream;
     }
 
+    public void setIsBatting(boolean isBatting) {
+        this.isBatting = isBatting;
+    }
+
+    public void updateScore(int runs) {
+        this.score += runs;
+    }
 }
 
 class GameRoom {
@@ -69,110 +43,156 @@ class GameRoom {
     GameRoom(int roomCode) {
         this.players = new ArrayList<>();
         this.roomCode = roomCode;
+        this.isGameStarted = false;
     }
 
-    ArrayList<Player> getAllPlayer() {
-        return players;
-    }
-
-    int addPlayer(Player player) {
-        if (players.size() == 2) {
+    synchronized int addPlayer(Player player) {
+        if (players.size() >= 2) {
             return -1;
         }
         players.add(player);
-        return 1;
+        return players.size();
+    }
+
+    Player getPlayer(int index) {
+        return players.get(index);
+    }
+
+    boolean isFull() {
+        return players.size() == 2;
+    }
+
+    void startGame() {
+        isGameStarted = true;
+        // Randomly decide who bats first
+        players.get(0).setIsBatting(Math.random() < 0.5);
+        players.get(1).setIsBatting(!players.get(0).isBatting);
     }
 }
 
-class ClientHandler implements Runnable {
-    // Status Codes
-    private static final byte ROOM_CREATION_SUCCESSFUL = 1;
-    private static final byte GAME_READY_TO_START = 2;
-    private static final byte SERVER_FULL = 3;
-    private static final byte ROOM_NOT_FOUND = -1;
+class GameServer {
+    private static final int PORT = 6969;
+    private static HashMap<Integer, GameRoom> rooms = new HashMap<>();
 
-    private Socket clientSocket;
-    private byte[] response;
-    private byte[] userChoice;
-    private byte zeroOrOne;
+    public static void main(String[] args) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Server started on port " + PORT);
 
-    ClientHandler(Socket socket, byte[] response, byte[] userChoice) {
-        this.clientSocket = socket;
-        this.response = response;
-        this.userChoice = userChoice;
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                new Thread(clientHandler).start();
+            }
+        } catch (IOException e) {
+            System.err.println("Server error: " + e.getMessage());
+        }
     }
 
-    public static int roomCodeGenerator() {
-        return (int) Math.floor(Math.random() * ((9999 - 1000) + 1));
-    }
+    private static class ClientHandler implements Runnable {
+        private static final byte ROOM_CREATED = 1;
+        private static final byte GAME_READY = 2;
+        private static final byte ROOM_FULL = 3;
+        private static final byte ROOM_NOT_FOUND = 4;
 
-    HashMap<Integer, GameRoom> recordBook = sharedHashMap.getRecordBook();
+        private Socket clientSocket;
+        private DataInputStream in;
+        private DataOutputStream out;
 
-    public void run() {
-        try (DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream())) {
+        ClientHandler(Socket socket) {
+            this.clientSocket = socket;
+        }
 
-            zeroOrOne = dataInputStream.readByte();
+        private int generateRoomCode() {
+            int code;
+            do {
+                code = 1000 + (int) (Math.random() * 9000);
+            } while (rooms.containsKey(code));
+            return code;
+        }
 
-            // If this does not work try with Setter insted of constructor
-            DataOutputStream player01DataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-            // Player - 1
-            Player player01 = new Player("Test Player11", player01DataOutputStream);
+        @Override
+        public void run() {
+            try {
+                in = new DataInputStream(clientSocket.getInputStream());
+                out = new DataOutputStream(clientSocket.getOutputStream());
 
-            // Player - 2
-            Player player02 = null;
-            DataOutputStream player02DataOutputStream = null;
+                byte choice = in.readByte();
 
-            switch ((int) zeroOrOne) {
-                case 0:
-                    int roomCode = roomCodeGenerator();
-                    while (!recordBook.isEmpty() && recordBook.containsKey(roomCode))
-                        roomCode = roomCodeGenerator();
-                    GameRoom room = new GameRoom(roomCode);
-                    room.addPlayer(player01);
-                    recordBook.put(roomCode, room);
-                    response[0] = ROOM_CREATION_SUCCESSFUL;
-                    ByteBuffer.wrap(response, 1, 4).putInt(roomCode);
-                    System.out.println("Room Created Successfully \nRoom code: " + roomCode);
-                    player01DataOutputStream.write(response);
-                    break;
-                case 1:
-                    System.out.println(recordBook);
-                    dataInputStream.read(userChoice);
+                if (choice == 0) { // Create new room
+                    handleRoomCreation();
+                } else { // Join existing room
+                    handleRoomJoin();
+                }
+            } catch (IOException e) {
+                System.err.println("Error handling client: " + e.getMessage());
+            } finally {
+                try {
+                    clientSocket.close();
+                } catch (IOException e) {
+                    System.err.println("Error closing socket: " + e.getMessage());
+                }
+            }
+        }
 
-                    player02 = new Player("Test Player22", new DataOutputStream(clientSocket.getOutputStream()));
-                    player02DataOutputStream = player02.getDataOutputStream();
+        private void handleRoomCreation() throws IOException {
+            int roomCode = generateRoomCode();
+            GameRoom room = new GameRoom(roomCode);
 
-                    int userRoomCode = ByteBuffer.wrap(userChoice, 0, 4).getInt();
-                    System.out.println("User room Code: " + userRoomCode);
+            Player player = new Player("Player 1", out);
+            room.addPlayer(player);
+            rooms.put(roomCode, room);
 
-                    if (recordBook.containsKey(userRoomCode)) {
-                        GameRoom obj = recordBook.get(userRoomCode);
-                        obj.addPlayer(player02);
-                        ArrayList<Player> totalPlayers = obj.getAllPlayer();
-                        System.out.println("Array List:" + totalPlayers);
-                        if (totalPlayers.size() > 2) {
-                            response[0] = SERVER_FULL;
-                            System.out.println("Room Full");
-                            break;
-                        } else {
-                            System.out.println("Joined Room");
-                            response[0] = GAME_READY_TO_START;
-                        }
-                    } else {
-                        response[0] = ROOM_NOT_FOUND;
-                        System.out.println("Room Not Found");
-                    }
-                    player02DataOutputStream.write(response);
+            // Send room code to client
+            out.writeByte(ROOM_CREATED);
+            out.writeInt(roomCode);
+            out.flush();
 
-                    // Testing purpose only
-                    byte[] temp = { 5, 0, 0, 0, 0 };
-                    player01DataOutputStream.write(temp);
-                    break;
+            System.out.println("Room created: " + roomCode);
+
+            // Wait for game updates
+            waitForGameUpdates(room, player);
+        }
+
+        private void handleRoomJoin() throws IOException {
+            int roomCode = in.readInt();
+            GameRoom room = rooms.get(roomCode);
+
+            if (room == null) {
+                out.writeByte(ROOM_NOT_FOUND);
+                out.flush();
+                return;
             }
 
-            System.out.println("----End----");
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (room.isFull()) {
+                out.writeByte(ROOM_FULL);
+                out.flush();
+                return;
+            }
+
+            Player player = new Player("Player 2", out);
+            room.addPlayer(player);
+
+            // Notify both players that game can start
+            out.writeByte(GAME_READY);
+            room.getPlayer(0).getOutputStream().writeByte(GAME_READY);
+            out.flush();
+            room.getPlayer(0).getOutputStream().flush();
+
+            System.out.println("Player joined room: " + roomCode);
+            room.startGame();
+
+            // Wait for game updates
+            waitForGameUpdates(room, player);
+        }
+
+        private void waitForGameUpdates(GameRoom room, Player currentPlayer) throws IOException {
+            while (true) {
+                int move = in.readInt();
+                // Send the move to the other player
+                Player otherPlayer = room.getPlayer(currentPlayer == room.getPlayer(0) ? 1 : 0);
+                otherPlayer.getOutputStream().writeInt(move);
+                otherPlayer.getOutputStream().flush();
+            }
         }
     }
 }
