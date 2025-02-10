@@ -87,6 +87,14 @@ public class GameClient {
 
             if (gameStatus == GAME_READY) {
                 System.out.println("\nGame is starting!");
+
+                // int isBatting = in.readInt();
+                // System.out.println(isBatting);
+                // if (isBatting == 200) {
+                // System.out.println("You are batting");
+                // } else {
+                // System.out.println("You are bowling");
+                // }
                 System.out.println("Enter a number between 1 and 6 for each ball.");
 
                 while (true) {
